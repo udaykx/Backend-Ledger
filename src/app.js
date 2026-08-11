@@ -1,6 +1,5 @@
 const express = require('express')
 const cookieParser = require("cookie-parser")
-const authRouter = require("./routes/auth.routes")
 
 
 
@@ -13,7 +12,17 @@ app.use(express.json())
 // middleware cookieparser
 app.use(cookieParser())
 
+/**
+ * - Routes
+ */
+const authRouter = require("./routes/auth.routes.js")
+const accountRouter = require("./routes/account.routes.js")
+
+/**
+ * - Use Routes
+ */
 app.use("/api/auth", authRouter)
+app.use("/api/accounts", accountRouter)
 
 
 module.exports = app
