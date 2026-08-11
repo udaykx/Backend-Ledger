@@ -1,5 +1,7 @@
 const userModel = require("../models/user.model")
 const jwt = require("jsonwebtoken")
+const emailService = require("../services/email.service")
+
 
 /**
 * - user register controller
@@ -19,7 +21,7 @@ async function userRegisterController(req, res) {
         return res.status(422).json({
             message: "User already exists with email.",
             status: "failed"
-        
+
         })
     }
 
@@ -40,6 +42,7 @@ async function userRegisterController(req, res) {
         },
         token
     })
+    await emailService.sendRegisterationEmail(user.email, user.name)
 }
 
 /**
@@ -52,15 +55,15 @@ async function userLoginController(req, res) {
 
     const user = await userModel.findOne({ email }).select("+password")
 
-    if(!user){
+    if (!user) {
         return res.status(401).json({
             message: "Email or password is INVALID"
         })
     }
 
-    const isValidPassword =  await user.comparePassword(password)
+    const isValidPassword = await user.comparePassword(password)
 
-    if(!isValidPassword){
+    if (!isValidPassword) {
         return res.status(401).json({
             message: "Email or password is INVALID"
         })
