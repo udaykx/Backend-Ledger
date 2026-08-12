@@ -1,16 +1,13 @@
 const userModel = require("../models/user.model")
 const jwt = require("jsonwebtoken")
 const emailService = require("../services/email.service")
-
+const tokenBlackListModel = require("../models/blackList.model")
 
 /**
 * - user register controller
 * - POST /api/auth/register
 */
-
-
 async function userRegisterController(req, res) {
-
     const { email, password, name } = req.body
 
     const isExists = await userModel.findOne({
@@ -21,7 +18,6 @@ async function userRegisterController(req, res) {
         return res.status(422).json({
             message: "User already exists with email.",
             status: "failed"
-
         })
     }
 
@@ -31,7 +27,6 @@ async function userRegisterController(req, res) {
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
 
-    //token stored in cookies
     res.cookie("token", token)
 
     res.status(201).json({
@@ -42,13 +37,14 @@ async function userRegisterController(req, res) {
         },
         token
     })
-    await emailService.sendRegisterationEmail(user.email, user.name)
+
+    await emailService.sendRegistrationEmail(user.email, user.name)
 }
 
 /**
- * - USer Login Controller
- * - POST /api/auth/
- */
+ * - User Login Controller
+ * - POST /api/auth/login
+  */
 
 async function userLoginController(req, res) {
     const { email, password } = req.body
@@ -71,10 +67,9 @@ async function userLoginController(req, res) {
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
 
-    //token stored in cookies
     res.cookie("token", token)
 
-    res.status(201).json({
+    res.status(200).json({
         user: {
             _id: user._id,
             email: user.email,
@@ -82,12 +77,40 @@ async function userLoginController(req, res) {
         },
         token
     })
+
+}
+
+
+/**
+ * - User Logout Controller
+ * - POST /api/auth/logout
+  */
+async function userLogoutController(req, res) {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[ 1 ]
+
+    if (!token) {
+        return res.status(200).json({
+            message: "User logged out successfully"
+        })
+    }
+
+
+
+    await tokenBlackListModel.create({
+        token: token
+    })
+
+    res.clearCookie("token")
+
+    res.status(200).json({
+        message: "User logged out successfully"
+    })
+
 }
 
 
 module.exports = {
-
     userRegisterController,
-    userLoginController
-
+    userLoginController,
+    userLogoutController
 }
